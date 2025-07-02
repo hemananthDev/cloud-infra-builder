@@ -16,6 +16,7 @@
           - docker.io
           - gnupg2
           - curl
+          - software-properties-common
         state: present
         update_cache: yes
 
@@ -24,6 +25,11 @@
         name: docker
         enabled: yes
         state: started
+
+    - name: Remove existing Jenkins APT repo (if present) to avoid conflicts
+      file:
+        path: /etc/apt/sources.list.d/jenkins.list
+        state: absent
 
     - name: Add Jenkins GPG key
       get_url:
