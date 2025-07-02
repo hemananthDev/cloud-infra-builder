@@ -1,10 +1,6 @@
 pipeline {
   agent any
 
-  environment {
-    SSH_KEY = credentials('project-key')  // Replace this!
-  }
-
   stages {
     stage('Generate Inventory File') {
       steps {
@@ -20,7 +16,7 @@ pipeline {
     stage('Run Ansible Playbook') {
       steps {
         withEnv(["ANSIBLE_HOST_KEY_CHECKING=False"]) {
-          withCredentials([sshUserPrivateKey(credentialsId: "${SSH_KEY}", keyFileVariable: 'KEYFILE')]) {
+          withCredentials([sshUserPrivateKey(credentialsId: 'project-key', keyFileVariable: 'KEYFILE')]) {
             sh '''
               cp $KEYFILE .ssh_key
               chmod 600 .ssh_key
