@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        SSH_KEY = credentials('project-key') // 👈 uses your existing Jenkins credential
+        SSH_KEY = credentials('project-key') // 👈 your stored SSH private key
     }
 
     stages {
@@ -18,6 +18,9 @@ pipeline {
         }
 
         stage('Run Ansible Playbook') {
+            environment {
+                ANSIBLE_HOST_KEY_CHECKING = 'False'
+            }
             steps {
                 sh '''
                     ansible-playbook -i inventory.ini ansible/install.yml
