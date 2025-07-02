@@ -12,7 +12,7 @@
       yum:
         name:
           - docker
-          - java-1.8.0-openjdk
+          - java-11-openjdk
         state: present
 
     - name: Enable and start Docker
