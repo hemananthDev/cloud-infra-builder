@@ -38,6 +38,6 @@
 
     - name: Enable and start Jenkins
       systemd:
-        name: jenkinsgit
+        name: jenkins
         enabled: yes
         state: started
