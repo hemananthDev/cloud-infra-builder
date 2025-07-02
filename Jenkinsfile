@@ -10,7 +10,7 @@ pipeline {
             steps {
                 script {
                     def ip = readFile('instance_ip.txt').trim()
-                    def inventory = "[all]\n${ip} ansible_user=ubuntu ansible_ssh_private_key_file=${env.SSH_KEY}\n"
+                    def inventory = "[all]\n${ip} ansible_user=ec2-user ansible_ssh_private_key_file=${env.SSH_KEY}\n"
                     writeFile file: 'inventory.ini', text: inventory
                 }
                 echo "✅ Inventory file created with IP from instance_ip.txt"
