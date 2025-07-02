@@ -16,9 +16,8 @@
           - docker.io
           - gnupg2
           - curl
-          - software-properties-common
         state: present
-        update_cache: yes
+        force_apt_get: yes
 
     - name: Enable and start Docker
       systemd:
@@ -26,20 +25,15 @@
         enabled: yes
         state: started
 
-    - name: Remove existing Jenkins APT repo (if present) to avoid conflicts
-      file:
-        path: /etc/apt/sources.list.d/jenkins.list
-        state: absent
-
-    - name: Add Jenkins GPG key
-      get_url:
+    - name: Add Jenkins apt key
+      apt_key:
         url: https://pkg.jenkins.io/debian-stable/jenkins.io.key
-        dest: /usr/share/keyrings/jenkins-keyring.asc
-        mode: '0644'
+        keyring: /usr/share/keyrings/jenkins-keyring.gpg
+        state: present
 
     - name: Add Jenkins APT repository
       apt_repository:
-        repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
+        repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.gpg] https://pkg.jenkins.io/debian-stable binary/"
         filename: "jenkins"
         state: present
 
@@ -52,6 +46,7 @@
       apt:
         name: jenkins
         state: present
+        force_apt_get: yes
 
     - name: Ensure Jenkins user owns /var/lib/jenkins
       file:
