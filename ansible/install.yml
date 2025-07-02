@@ -44,8 +44,19 @@
       systemd:
         daemon_reload: yes
 
-    - name: Enable and start Jenkins
+    - name: Enable Jenkins
       systemd:
         name: jenkins
         enabled: yes
-        state: started
+
+    - name: Start Jenkins with delay and fallback logging
+      shell: |
+        sleep 5
+        systemctl start jenkins || (systemctl status jenkins && journalctl -xe)
+      register: jenkins_status
+      ignore_errors: yes
+
+    - name: Show Jenkins service log if failed
+      debug:
+        var: jenkins_status.stdout_lines
+      when: jenkins_status.rc != 0
