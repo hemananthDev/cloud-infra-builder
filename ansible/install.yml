@@ -17,7 +17,6 @@
           - gnupg2
           - curl
         state: present
-        update_cache: yes
 
     - name: Enable and start Docker
       systemd:
@@ -36,7 +35,6 @@
         repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
         filename: "jenkins"
         state: present
-        update_cache: yes
 
     - name: Update apt after adding Jenkins repo
       apt:
@@ -48,7 +46,7 @@
         name: jenkins
         state: present
 
-    - name: Ensure Jenkins user owns /var/lib/jenkins
+    - name: Ensure Jenkins user owns its home directory
       file:
         path: /var/lib/jenkins
         owner: jenkins
