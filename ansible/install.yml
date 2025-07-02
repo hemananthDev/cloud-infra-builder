@@ -4,15 +4,15 @@
   become: yes
 
   tasks:
-    - name: Update yum cache
-      yum:
+    - name: Update apt cache
+      apt:
         update_cache: yes
 
     - name: Install required packages
-      yum:
+      apt:
         name:
-          - docker
-          - java-11-amazon-corretto
+          - docker.io
+          - openjdk-11-jdk
         state: present
 
     - name: Enable and start Docker
@@ -21,42 +21,24 @@
         enabled: yes
         state: started
 
-    - name: Add Jenkins repo
-      get_url:
-        url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
-        dest: /etc/yum.repos.d/jenkins.repo
-
-    - name: Import Jenkins key
-      rpm_key:
+    - name: Add Jenkins repo key
+      apt_key:
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io.key
         state: present
-        key: https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+
+    - name: Add Jenkins repo
+      apt_repository:
+        repo: "deb https://pkg.jenkins.io/debian-stable binary/"
+        state: present
 
     - name: Install Jenkins
-      yum:
+      apt:
         name: jenkins
         state: present
+        update_cache: yes
 
-    - name: Wait before starting Jenkins (ensure Jenkins is installed cleanly)
-      pause:
-        seconds: 10
-
-    - name: Reload systemd daemon
-      systemd:
-        daemon_reload: yes
-
-    - name: Enable Jenkins
+    - name: Enable and start Jenkins
       systemd:
         name: jenkins
         enabled: yes
-
-    - name: Start Jenkins with delay and fallback logging
-      shell: |
-        sleep 5
-        systemctl start jenkins || (systemctl status jenkins && journalctl -xe)
-      register: jenkins_status
-      ignore_errors: yes
-
-    - name: Show Jenkins service log if failed
-      debug:
-        var: jenkins_status.stdout_lines
-      when: jenkins_status.rc != 0
+        state: started
