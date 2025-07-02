@@ -36,6 +36,14 @@
         name: jenkins
         state: present
 
+    - name: Wait before starting Jenkins (ensure Jenkins is installed cleanly)
+      pause:
+        seconds: 10
+
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes
+
     - name: Enable and start Jenkins
       systemd:
         name: jenkins
