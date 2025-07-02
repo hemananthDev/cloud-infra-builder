@@ -17,7 +17,7 @@
           - gnupg2
           - curl
         state: present
-        force_apt_get: yes
+        update_cache: yes
 
     - name: Enable and start Docker
       systemd:
@@ -26,14 +26,14 @@
         state: started
 
     - name: Add Jenkins apt key
-      apt_key:
+      get_url:
         url: https://pkg.jenkins.io/debian-stable/jenkins.io.key
-        keyring: /usr/share/keyrings/jenkins-keyring.gpg
-        state: present
+        dest: /usr/share/keyrings/jenkins-keyring.asc
+        mode: '0644'
 
     - name: Add Jenkins APT repository
       apt_repository:
-        repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.gpg] https://pkg.jenkins.io/debian-stable binary/"
+        repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
         filename: "jenkins"
         state: present
 
@@ -46,7 +46,6 @@
       apt:
         name: jenkins
         state: present
-        force_apt_get: yes
 
     - name: Ensure Jenkins user owns /var/lib/jenkins
       file:
@@ -54,6 +53,9 @@
         owner: jenkins
         group: jenkins
         recurse: yes
+
+    - name: Reload systemd (just in case)
+      command: systemctl daemon-reexec
 
     - name: Enable and start Jenkins
       systemd:
