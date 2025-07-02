@@ -36,6 +36,7 @@
         repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
         filename: "jenkins"
         state: present
+        update_cache: yes
 
     - name: Update apt after adding Jenkins repo
       apt:
@@ -54,8 +55,11 @@
         group: jenkins
         recurse: yes
 
-    - name: Reload systemd (just in case)
+    - name: Reload systemd (full)
       command: systemctl daemon-reexec
+
+    - name: Reload systemd (lightweight)
+      command: systemctl daemon-reload
 
     - name: Enable and start Jenkins
       systemd:
