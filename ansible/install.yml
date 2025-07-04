@@ -3,37 +3,40 @@
   hosts: all
   become: yes
 
+  vars:
+    java_version: openjdk-17-jdk
+
   tasks:
     - name: Update apt cache
       apt:
         update_cache: yes
         force_apt_get: yes
 
-    - name: Install required packages
+    - name: Install required packages (Java 17, Docker, Curl, GPG)
       apt:
         name:
-          - openjdk-11-jdk
+          - "{{ java_version }}"
           - docker.io
           - gnupg2
           - curl
         state: present
 
-    - name: Enable and start Docker
+    - name: Enable and start Docker service
       systemd:
         name: docker
         enabled: yes
         state: started
 
-    - name: Add Jenkins apt key
+    - name: Add Jenkins GPG key
       get_url:
-        url: https://pkg.jenkins.io/debian-stable/jenkins.io.key
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
         dest: /usr/share/keyrings/jenkins-keyring.asc
         mode: '0644'
 
     - name: Add Jenkins APT repository
       apt_repository:
         repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
-        filename: "jenkins"
+        filename: jenkins
         state: present
 
     - name: Update apt after adding Jenkins repo
@@ -46,20 +49,21 @@
         name: jenkins
         state: present
 
-    - name: Ensure Jenkins user owns its home directory
+    - name: Ensure Jenkins home directory exists
       file:
         path: /var/lib/jenkins
+        state: directory
         owner: jenkins
         group: jenkins
         recurse: yes
 
-    - name: Reload systemd (full)
+    - name: Reload systemd (full re-exec)
       command: systemctl daemon-reexec
 
-    - name: Reload systemd (lightweight)
+    - name: Reload systemd (lightweight reload)
       command: systemctl daemon-reload
 
-    - name: Enable and start Jenkins
+    - name: Enable and start Jenkins service
       systemd:
         name: jenkins
         enabled: yes
