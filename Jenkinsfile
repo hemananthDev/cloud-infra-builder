@@ -12,14 +12,14 @@ pipeline {
           // Read IP from Terraform output
           def ip = readFile('instance_ip.txt').trim()
           
-          // Create minimal inventory file
-          writeFile file: 'inventory.ini', text: """
+          // Create inventory file in ansible directory
+          writeFile file: 'ansible/inventory.ini', text: """
           [all]
           ${ip} ansible_user=ubuntu ansible_ssh_private_key_file=.ssh_key
           """
           
-          // Create ansible.cfg for better control.
-          writeFile file: 'ansible.cfg', text: """
+          // Create ansible.cfg in ansible directory
+          writeFile file: 'ansible/ansible.cfg', text: """
           [defaults]
           host_key_checking = False
           inventory = inventory.ini
@@ -41,10 +41,11 @@ pipeline {
         )]) {
           sh '''
             # Secure key handling
-            cp "$SSH_KEY" .ssh_key
-            chmod 600 .ssh_key .ssh_key
+            cp "$SSH_KEY" ansible/.ssh_key
+            chmod 600 ansible/.ssh_key
             
-            # Run playbook with verbose output
+            # Change to ansible directory and run playbook
+            cd ansible
             ansible-playbook install.yml -vv
           '''
         }
@@ -55,8 +56,8 @@ pipeline {
   post {
     always {
       sh '''
-        # Securely remove temporary files
-        rm -f .ssh_key inventory.ini ansible.cfg
+        # Securely remove temporary files from ansible directory
+        rm -f ansible/.ssh_key ansible/inventory.ini ansible/ansible.cfg
       '''
     }
     success {
