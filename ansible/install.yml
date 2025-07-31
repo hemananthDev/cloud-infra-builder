@@ -1,40 +1,43 @@
-- name: Install Jenkins and Docker on Ubuntu
+---
+- name: Configure remote EC2 instance for Jenkins-based automation
   hosts: all
-  become: yes
+  become: true
 
   tasks:
     - name: Update apt cache
       apt:
         update_cache: yes
-        force_apt_get: yes
 
-    - name: Install Docker
+    - name: Install required system packages
       apt:
-        name: docker.io
+        name:
+          - git
+          - curl
+          - unzip
+          - python3
+          - python3-pip
+          - openjdk-11-jdk
         state: present
 
-    - name: Enable and start Docker service
-      systemd:
-        name: docker
-        enabled: yes
-        state: started
+    - name: Install pip packages for Ansible and AWS CLI usage
+      pip:
+        name:
+          - boto3
+          - botocore
 
-    - name: Add Jenkins GPG key
-      get_url:
-        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
-        dest: /usr/share/keyrings/jenkins-keyring.asc
-        mode: '0644'
+    - name: Add Jenkins repository key
+      apt_key:
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io.key
+        state: present
 
-    - name: Add Jenkins APT repository
+    - name: Add Jenkins repository
       apt_repository:
-        repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
-        filename: jenkins
+        repo: deb https://pkg.jenkins.io/debian-stable binary/
         state: present
 
-    - name: Update apt after adding Jenkins repo
+    - name: Update apt cache after adding Jenkins repo
       apt:
         update_cache: yes
-        force_apt_get: yes
 
     - name: Install Jenkins
       apt:
@@ -55,12 +58,14 @@
     - name: Reload systemd (lightweight reload)
       command: systemctl daemon-reload
 
+    - name: Wait for Jenkins package to settle before starting
+      wait_for:
+        path: /etc/init.d/jenkins
+        state: present
+        timeout: 30
+
     - name: Enable and start Jenkins service
       systemd:
         name: jenkins
         enabled: yes
         state: started
-
-    - name: Print final message
-      debug:
-        msg: "✅ Jenkins and Docker installed successfully."
