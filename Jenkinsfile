@@ -18,7 +18,7 @@ pipeline {
           ${ip} ansible_user=ubuntu ansible_ssh_private_key_file=.ssh_key
           """
           
-          // Create ansible.cfg for better control
+          // Create ansible.cfg for better control.
           writeFile file: 'ansible.cfg', text: """
           [defaults]
           host_key_checking = False
