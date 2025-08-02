@@ -1,21 +1,42 @@
 ---
-- name: Install Docker, Java, and Jenkins on Ubuntu
+- name: Setup Jenkins Builder Node for EKS Deployment
   hosts: all
-  become: yes
-
-  vars:
-    java_package: openjdk-17-jdk
+  become: true
 
   tasks:
     - name: Update apt cache
       apt:
         update_cache: yes
-        force_apt_get: yes
 
-    - name: Install Java and dependencies
+    - name: Install Java (required for Jenkins)
       apt:
-        name:
-          - "{{ java_package }}"
+        name: openjdk-17-jdk
+        state: present
+
+    - name: Add Jenkins GPG key
+      apt_key:
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io.key
+        state: present
+
+    - name: Add Jenkins repository
+      apt_repository:
+        repo: deb https://pkg.jenkins.io/debian-stable binary/
+        state: present
+
+    - name: Install Jenkins
+      apt:
+        name: jenkins
+        state: present
+
+    - name: Start and enable Jenkins service
+      systemd:
+        name: jenkins
+        enabled: yes
+        state: started
+
+    - name: Install Docker dependencies
+      apt:
+        name: 
           - apt-transport-https
           - ca-certificates
           - curl
@@ -23,45 +44,82 @@
           - lsb-release
         state: present
 
-    - name: Install Docker
+    - name: Add Docker GPG key
+      shell: |
+        mkdir -p /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+      args:
+        creates: /etc/apt/keyrings/docker.gpg
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+        filename: docker
+
+    - name: Update apt cache after Docker repo
       apt:
-        name: docker.io
+        update_cache: yes
+
+    - name: Install Docker Engine
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
         state: present
 
-    - name: Enable and start Docker
+    - name: Enable and start Docker service
       systemd:
         name: docker
         enabled: yes
         state: started
 
-    - name: Add Jenkins GPG key
-      get_url:
-        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
-        dest: /usr/share/keyrings/jenkins-keyring.asc
-        mode: '0644'
+    - name: Add ubuntu user to docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
 
-    - name: Add Jenkins APT repository
-      apt_repository:
-        repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
-        filename: jenkins
+    - name: Install AWS CLI v2
+      shell: |
+        curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
+        unzip -o /tmp/awscliv2.zip -d /tmp
+        /tmp/aws/install --update
+      args:
+        creates: /usr/local/bin/aws
+
+    - name: Install kubectl
+      shell: |
+        curl -o /usr/local/bin/kubectl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x /usr/local/bin/kubectl
+      args:
+        creates: /usr/local/bin/kubectl
+
+    - name: Install ECR credential helper
+      shell: |
+        apt install -y golang
+        git clone https://github.com/awslabs/amazon-ecr-credential-helper /opt/ecr-login
+        cd /opt/ecr-login && make
+        mv /opt/ecr-login/bin/linux_amd64/docker-credential-ecr-login /usr/local/bin/
+      args:
+        creates: /usr/local/bin/docker-credential-ecr-login
+
+    - name: Install git
+      apt:
+        name: git
         state: present
 
-    - name: Update apt cache after adding Jenkins repo
+    - name: Install Python3 and pip
       apt:
-        update_cache: yes
-        force_apt_get: yes
-
-    - name: Install Jenkins
-      apt:
-        name: jenkins
+        name:
+          - python3
+          - python3-pip
         state: present
 
-    - name: Enable and start Jenkins
-      systemd:
-        name: jenkins
-        enabled: yes
-        state: started
-
-    - name: Final status
+    - name: Print final reminder
       debug:
-        msg: "✅ Java, Docker, and Jenkins installed and started successfully."
+        msg: |
+          ✅ Jenkins, Docker, AWS CLI, kubectl, and more are installed!
+          👉 Don’t forget to run manually:
+              aws eks --region ap-south-1 update-kubeconfig --name simple-eks
