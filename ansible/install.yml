@@ -37,15 +37,11 @@
         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
         state: present
 
-    - name: Get Ubuntu codename
-      command: lsb_release -cs
-      register: distro_codename
-
-    - name: Add Kubernetes APT repository dynamically (focal/jammy/etc.)
-      apt_repository:
-        repo: "deb https://apt.kubernetes.io/ kubernetes-{{ distro_codename.stdout }} main"
-        state: present
-        filename: kubernetes
+    - name: Add Kubernetes APT repository manually with jammy codename
+      copy:
+        dest: /etc/apt/sources.list.d/kubernetes.list
+        content: |
+          deb https://apt.kubernetes.io/ kubernetes-jammy main
 
     - name: Update apt cache after adding Kubernetes repo
       apt:
