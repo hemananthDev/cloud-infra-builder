@@ -1,15 +1,11 @@
 ---
-- name: Setup Kubernetes Master Node on Ubuntu
+- name: Kubernetes Master Node - Installation Phase Only
   hosts: all
-  become: yes
+  become: true
 
   tasks:
-    - name: Update apt cache
-      apt:
-        update_cache: yes
-        cache_valid_time: 3600
 
-    - name: Install required packages
+    - name: Update apt cache and install base packages
       apt:
         name:
           - apt-transport-https
@@ -18,6 +14,7 @@
           - gnupg
           - lsb-release
         state: present
+        update_cache: yes
 
     - name: Install Docker
       apt:
@@ -30,16 +27,14 @@
         enabled: yes
         state: started
 
-    - name: Download Kubernetes GPG key
-      ansible.builtin.get_url:
+    - name: Add Kubernetes GPG key
+      apt_key:
         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-        dest: /etc/apt/keyrings/kubernetes-archive-keyring.gpg
-        mode: '0644'
-        force: true
+        state: present
 
     - name: Add Kubernetes APT repository
-      ansible.builtin.apt_repository:
-        repo: deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
+      apt_repository:
+        repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
         state: present
         filename: kubernetes
 
@@ -47,7 +42,7 @@
       apt:
         update_cache: yes
 
-    - name: Install Kubernetes tools
+    - name: Install Kubernetes components
       apt:
         name:
           - kubelet
@@ -55,7 +50,7 @@
           - kubectl
         state: present
 
-    - name: Hold Kubernetes packages at current version
+    - name: Hold Kubernetes components at current version
       apt:
         name:
           - kubelet
@@ -63,7 +58,7 @@
           - kubectl
         state: hold
 
-    - name: Load kernel modules
+    - name: Create /etc/modules-load.d/k8s.conf
       copy:
         dest: /etc/modules-load.d/k8s.conf
         content: |
@@ -80,7 +75,7 @@
         name: br_netfilter
         state: present
 
-    - name: Set sysctl params for Kubernetes
+    - name: Apply sysctl params for Kubernetes
       copy:
         dest: /etc/sysctl.d/k8s.conf
         content: |
