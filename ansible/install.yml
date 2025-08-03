@@ -4,6 +4,7 @@
   become: true
 
   tasks:
+
     - name: Remove broken kubernetes.list file if it exists
       file:
         path: /etc/apt/sources.list.d/kubernetes.list
@@ -36,7 +37,7 @@
         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
         state: present
 
-    - name: Add Kubernetes APT repository
+    - name: Add Kubernetes APT repository (always use 'kubernetes-xenial')
       apt_repository:
         repo: "deb https://apt.kubernetes.io/ kubernetes-xenial main"
         state: present
