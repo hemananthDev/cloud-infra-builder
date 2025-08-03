@@ -4,7 +4,6 @@
   become: yes
 
   tasks:
-
     - name: Update apt cache
       apt:
         update_cache: yes
@@ -31,14 +30,16 @@
         enabled: yes
         state: started
 
-    - name: Add Kubernetes GPG key
-      apt_key:
+    - name: Download Kubernetes GPG key
+      ansible.builtin.get_url:
         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-        state: present
+        dest: /etc/apt/keyrings/kubernetes-archive-keyring.gpg
+        mode: '0644'
+        force: true
 
-    - name: Add Kubernetes apt repository
-      apt_repository:
-        repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+    - name: Add Kubernetes APT repository
+      ansible.builtin.apt_repository:
+        repo: deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
         state: present
         filename: kubernetes
 
