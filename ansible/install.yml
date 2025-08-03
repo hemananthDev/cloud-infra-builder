@@ -2,7 +2,6 @@
 - name: Kubernetes Master Node - Installation Phase Only
   hosts: all
   become: true
-
   tasks:
 
     - name: Remove broken kubernetes.list file if it exists
@@ -12,6 +11,7 @@
 
     - name: Update apt cache and install base packages
       apt:
+        update_cache: yes
         name:
           - apt-transport-https
           - ca-certificates
@@ -19,7 +19,6 @@
           - gnupg
           - lsb-release
         state: present
-        update_cache: yes
 
     - name: Install Docker
       apt:
@@ -29,7 +28,7 @@
     - name: Enable and start Docker
       systemd:
         name: docker
-        enabled: yes
+        enabled: true
         state: started
 
     - name: Add Kubernetes GPG key
@@ -37,56 +36,30 @@
         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
         state: present
 
-    - name: Add Kubernetes APT repository manually with jammy codename
-      copy:
-        dest: /etc/apt/sources.list.d/kubernetes.list
-        content: |
-          deb https://apt.kubernetes.io/ kubernetes-jammy main
+    - name: Add Kubernetes APT repository (force kubernetes-xenial)
+      apt_repository:
+        repo: "deb https://apt.kubernetes.io/ kubernetes-xenial main"
+        state: present
+        filename: kubernetes
 
     - name: Update apt cache after adding Kubernetes repo
       apt:
         update_cache: yes
 
-    - name: Install Kubernetes components
+    - name: Install kubelet, kubeadm, kubectl
       apt:
         name:
           - kubelet
           - kubeadm
           - kubectl
         state: present
+        allow_downgrade: yes
 
-    - name: Hold Kubernetes components at current version
+    - name: Hold Kubernetes packages
       apt:
         name:
           - kubelet
           - kubeadm
           - kubectl
-        state: hold
-
-    - name: Create /etc/modules-load.d/k8s.conf
-      copy:
-        dest: /etc/modules-load.d/k8s.conf
-        content: |
-          overlay
-          br_netfilter
-
-    - name: Load overlay module
-      modprobe:
-        name: overlay
         state: present
-
-    - name: Load br_netfilter module
-      modprobe:
-        name: br_netfilter
-        state: present
-
-    - name: Apply sysctl params for Kubernetes
-      copy:
-        dest: /etc/sysctl.d/k8s.conf
-        content: |
-          net.bridge.bridge-nf-call-iptables  = 1
-          net.ipv4.ip_forward                 = 1
-          net.bridge.bridge-nf-call-ip6tables = 1
-
-    - name: Apply sysctl settings
-      command: sysctl --system
+        mark: hold
