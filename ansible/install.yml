@@ -36,9 +36,9 @@
         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
         state: present
 
-    - name: Add Kubernetes APT repository (force kubernetes-xenial)
+    - name: Add Kubernetes APT repository
       apt_repository:
-        repo: "deb https://apt.kubernetes.io/ kubernetes-xenial main"
+        repo: "deb https://apt.kubernetes.io/ kubernetes main"
         state: present
         filename: kubernetes
 
