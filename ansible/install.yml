@@ -41,13 +41,6 @@
         groups: docker
         append: yes
 
-    - name: Add 'jenkins' user to Docker group (if Jenkins gets created)
-      user:
-        name: jenkins
-        groups: docker
-        append: yes
-      ignore_errors: true
-
     - name: Download AWS CLI v2 installer
       get_url:
         url: "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
@@ -64,6 +57,11 @@
       shell: /tmp/aws/install
       args:
         creates: /usr/local/bin/aws
+
+    - name: Clean up AWS CLI zip
+      file:
+        path: /tmp/awscliv2.zip
+        state: absent
 
     - name: Download kubectl binary
       get_url:
@@ -97,3 +95,9 @@
         name: jenkins
         enabled: yes
         state: started
+
+    - name: Add 'jenkins' user to Docker group
+      user:
+        name: jenkins
+        groups: docker
+        append: yes
