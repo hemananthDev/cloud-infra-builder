@@ -4,6 +4,10 @@
   become: true
 
   tasks:
+    - name: Remove broken kubernetes.list file if it exists
+      file:
+        path: /etc/apt/sources.list.d/kubernetes.list
+        state: absent
 
     - name: Update apt cache and install base packages
       apt:
@@ -32,9 +36,9 @@
         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
         state: present
 
-    - name: Add Kubernetes APT repository (Ubuntu 22.04 - Jammy)
+    - name: Add Kubernetes APT repository
       apt_repository:
-        repo: "deb https://apt.kubernetes.io/ kubernetes-jammy main"
+        repo: "deb https://apt.kubernetes.io/ kubernetes-xenial main"
         state: present
         filename: kubernetes
 
