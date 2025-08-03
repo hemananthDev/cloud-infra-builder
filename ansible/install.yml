@@ -37,9 +37,13 @@
         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
         state: present
 
-    - name: Add Kubernetes APT repository (always use 'kubernetes-xenial')
+    - name: Get Ubuntu codename
+      command: lsb_release -cs
+      register: distro_codename
+
+    - name: Add Kubernetes APT repository dynamically (focal/jammy/etc.)
       apt_repository:
-        repo: "deb https://apt.kubernetes.io/ kubernetes-xenial main"
+        repo: "deb https://apt.kubernetes.io/ kubernetes-{{ distro_codename.stdout }} main"
         state: present
         filename: kubernetes
 
