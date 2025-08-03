@@ -36,9 +36,9 @@
         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
         state: present
 
-    - name: Add Kubernetes APT repository
+    - name: Add Kubernetes APT repository (with trusted flag)
       apt_repository:
-        repo: "deb https://apt.kubernetes.io/ kubernetes main"
+        repo: "deb [trusted=yes] https://apt.kubernetes.io/ kubernetes-xenial main"
         state: present
         filename: kubernetes
 
